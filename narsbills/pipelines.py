@@ -44,11 +44,13 @@ class FinishBillPipeline(object):
             self.conn.close()
 
     def process_item(self, item, spider):
+        if item['billDetail'] == True:
+            pass
+
         if item['BillNo']:
             if item['BillNo'] in self.billNo:
                 raise DropItem("A duplicate item : %s" % item['BillNo'])
 
-        # SQL
         sql = """INSERT INTO FinishBill VALUES(
                         %(BillNo)s, 
                         %(BillName)s, 
@@ -58,8 +60,8 @@ class FinishBillPipeline(object):
                         %(SubMitDt)s, 
                         %(CommittieeName)s, 
                         %(ProcDt)s, 
-                        %(GeneralResult)s)
-        ;"""
+                        %(GeneralResult)s);
+        """
         try:
             self.cur.execute(sql, item)
         except (Exception, psycopg2.DatabaseError) as error:

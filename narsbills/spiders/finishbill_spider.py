@@ -1,27 +1,42 @@
 import scrapy
 import time
 import re
+from scrapy import signals
+from scrapy import Spider
+
+
+TARGET_URL = 'http://likms.assembly.go.kr/bill/FinishBill.do'
 
 
 class FinishBillSpider(scrapy.Spider):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self):
         self.i = 1
+        self.count =0
+        self.DroppedItem =[]
 
     name = "FinishBill"
     start_urls = [
-        'http://likms.assembly.go.kr/bill/FinishBill.do',
+        TARGET_URL,
     ]
 
     def start_requests(self):
         yield scrapy.FormRequest(
-            url='http://likms.assembly.go.kr/bill/FinishBill.do',
+            url=TARGET_URL,
             formdata={
                 'strPage': f'{self.i}',
                 'pageSize': "10",
             }
         )
+
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        spider = super(FinishBillSpider, cls).from_crawler(crawler, *args, **kwargs)
+        crawler.signals.connect(spider.item_dropped, signal=signals.item_dropped, **kwargs)
+        return spider
+
+    def item_dropped(self, **kwargs):
+        self.count += 1
+        self.DroppedItem.append(kwargs['item']['BillLink'])
 
     def parse(self, response):
         for tr in response.xpath('/html/body/div/div[2]/div[2]/div/div[3]/table/tbody/tr'):
@@ -40,21 +55,28 @@ class FinishBillSpider(scrapy.Spider):
         if self.i < 1:
             self.i += 1
             yield scrapy.FormRequest(
-                url='http://likms.assembly.go.kr/bill/FinishBill.do',
+                url=TARGET_URL,
                 formdata={
                     'strPage': f'{self.i}',
                     'pageSize': "10",
                 },
                 callback=self.parse
             )
-            time.sleep(10)
 
-        # urls = response.xpath('/html/body/div/div[2]/div[2]/div/div[3]/table/tbody/tr').css('a::attr(href)').re(r'P\w+')
-        # for url in urls:
-        #     yield scrapy.FormRequest(
-        #         'http://likms.assembly.go.kr/bill/billDetail.do?billId=' + url, callback=self.parse_following_urls, dont_filter=True)
+        urls = response.xpath('/html/body/div/div[2]/div[2]/div/div[3]/table/tbody/tr').css('a::attr(href)').re(r'P\w+')
+        for url in urls:
+            if url in self.DroppedItem:
+                print(f"url: {url}")
+                continue
+            print("Folling Links")
+            time.sleep(2)
+            yield scrapy.FormRequest(
+                'http://likms.assembly.go.kr/bill/billDetail.do?billId=' + url,
+                callback=self.parse_following_urls,
+                dont_filter=True)
 
     def parse_following_urls(self, response):
         yield {
+            'billDetail': True,
             'summaryContent': response.css('div.textType02::text').getall()
         }
