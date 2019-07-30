@@ -13,6 +13,10 @@ class NarsbillsSpiderMiddleware(object):
     # scrapy acts as if the spider middleware does not modify the
     # passed objects.
 
+    def __init__(self):
+        self.userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " \
+                         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36"
+
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
@@ -50,6 +54,8 @@ class NarsbillsSpiderMiddleware(object):
 
         # Must return only requests (not items).
         for r in start_requests:
+            r.headers.setdefault('User-Agent', self.userAgent)
+            print(f'request: {r.headers}')
             yield r
 
     def spider_opened(self, spider):

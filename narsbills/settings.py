@@ -18,9 +18,9 @@ NEWSPIDER_MODULE = 'narsbills.spiders'
 DOWNLOAD_DELAY = 1
 FEED_EXPORT_ENCODING = 'utf-8'
 
-ITEM_PIPELINES = {
-    'narsbills.pipelines.FinishBillPipeline': 300,
-}
+# ITEM_PIPELINES = {
+#     'narsbills.pipelines.FinishBillPipeline': 300,
+# }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'narsbills (+http://www.yourdomain.com)'
@@ -53,9 +53,9 @@ ROBOTSTXT_OBEY = False
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    'narsbills.middlewares.NarsbillsSpiderMiddleware': 543,
-#}
+SPIDER_MIDDLEWARES = {
+   'narsbills.middlewares.NarsbillsSpiderMiddleware': 543,
+}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
