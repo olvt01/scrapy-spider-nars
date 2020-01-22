@@ -16,10 +16,18 @@ TARGET_URL_DETAIL_COACTORLIST= "http://likms.assembly.go.kr/bill/coactorListPopu
 FORMREQUEST_PAGE_SIZE = "100"
 ALLOWED_COMMITTEE = [
     '과학기술정보방송통신위원회',
-    '문화체육관광위원회',
+    '국토교통위원회',
+    '기획재정위원회',
+    '농림축산식품해양수산위원회',
     '산업통상자원중소벤처기업위원회',
     '산업통상자원위원회',
-    '미래창조과학방송통신위원회'
+    '문화체육관광위원회',
+    '미래창조과학방송통신위원회',
+    '법제사법위원회',
+    '보건복지위원회',
+    '정무위원회',
+    '환경노동위원회',
+    '행정안전위원회',
 ]
 
 class MooringBillSpider(scrapy.Spider):
@@ -224,7 +232,7 @@ class FinishBillSpider(scrapy.Spider):
                 callback=self.parse_following_urls2,
                 dont_filter=True)
 
-        # if DropCount == int(FORMREQUEST_PAGE_SIZE):
+        # if DropCount == len(url_list) and self.sendingPage > 2:
         #     raise CloseSpider('Stop Spider')
 
         totalItems = int(''.join(response.css('body > div > div.contentWrap > div.subContents > p > span').re(r'[0-9]')))

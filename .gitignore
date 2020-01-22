@@ -110,4 +110,5 @@ venv.bak/
 .mypy_cache/
 
 database.ini
+database1.ini
 dbtester.py

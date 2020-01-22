@@ -183,6 +183,68 @@ class FinishBillPipeline(object):
 
     def close_spider(self, spider):
         self.conn.commit()
+
+        # Update LastUpdated Field
+        # Select billno, proposerdt, submitdt, procdt from billview
+        # Update bill set lastupdated where billno
+
+        try:
+            self.cur.execute("SELECT count(*), bill_id FROM billview group by bill_id;")
+            rows = self.cur.fetchall()
+            bills = {x[1]: {'count': x[0], 'lastupdated': ''} for x in rows}
+
+            self.cur.execute("SELECT billno, proposerdt, submitdt, procdt, bill_id FROM billview;")
+            rows = self.cur.fetchall()
+
+            billviews = {x[0]: {'lastupdated': x[3] or x[2] or x[1]} for x in rows}
+
+            for row in rows:
+                if row[3]:
+                    if row[3] > bills[row[4]]['lastupdated']:
+                        bills[row[4]]['lastupdated'] = row[3]
+                        continue
+                if row[2]:
+                    if row[2] > bills[row[4]]['lastupdated']:
+                        bills[row[4]]['lastupdated'] = row[2]
+                        continue
+                if row[1]:
+                    if row[1] > bills[row[4]]['lastupdated']:
+                        bills[row[4]]['lastupdated'] = row[1]
+                        continue
+            print(f'bills2: {bills}')
+
+            for bill in bills:
+                # print(bill)
+                # print(bills[bill]['count'])
+                # print(bills[bill]['lastupdated'])
+                sql = """UPDATE bill
+                            SET count = (%s), lastupdated = (%s)
+                            WHERE id = (%s)
+                """
+                try:
+                    self.cur.execute(sql, (bills[bill]['count'], bills[bill]['lastupdated'], bill,))
+                except (Exception, psycopg2.DatabaseError) as error:
+                    print(error)
+
+                self.conn.commit()
+
+            for billview in billviews:
+                sql = """UPDATE billview
+                            SET lastupdated = (%s)
+                            WHERE billno = (%s)
+                """
+
+                try:
+                    self.cur.execute(sql, (billviews[billview]['lastupdated'], billview,))
+                except (Exception, psycopg2.DatabaseError) as error:
+                    print(error)
+
+                self.conn.commit()
+
+
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+
         self.cur.close()
         if self.conn is not None:
             self.conn.close()
@@ -271,8 +333,11 @@ class FinishBillPipeline(object):
                     SET BillStep = (%s), SummaryContent = (%s), Status = (%s), Done = (%s)
                     WHERE BillNo = (%s)
         """
+        Done = False
+        if item['BillStep'] in ['공포', '대안반영폐기', '철회', '폐기', '부결']:
+            Done = True
         try:
-            self.cur.execute(sql, (item['BillStep'], item['SummaryContent'], item['Status'], True, item['BillNo'],))
+            self.cur.execute(sql, (item['BillStep'], item['SummaryContent'], item['Status'], Done, item['BillNo'],))
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
 
